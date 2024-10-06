@@ -9,12 +9,22 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(bodyParser.json());
 
-// Enable CORS with your specific frontend domain
+// Enable CORS with your specific frontend domain and handle preflight requests
 app.use(cors({
-    origin: ['https://lipkinz.github.io'], // Replace with your actual frontend GitHub Pages URL or other domains if needed
-    methods: ['GET', 'POST'], // Specify allowed methods
-    allowedHeaders: ['Content-Type', 'Authorization'] // Specify allowed headers
+    origin: ['https://lipkinz.github.io'], // Replace with your actual frontend GitHub Pages URL
+    methods: ['GET', 'POST', 'OPTIONS'], // Include OPTIONS for preflight requests
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allow these headers
+    credentials: true // Allow credentials if needed
 }));
+
+// Handle OPTIONS requests for CORS preflight
+app.options('*', cors()); // Preflight requests handling
+
+// Disable caching for API requests to avoid cache issues
+app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-store'); // Disable caching
+    next();
+});
 
 // Root Route to check if the server is running
 app.get('/', (req, res) => {
@@ -54,4 +64,3 @@ app.listen(PORT, async () => {
         console.error('Error connecting to Elasticsearch:', error.message || error);
     }
 });
-
