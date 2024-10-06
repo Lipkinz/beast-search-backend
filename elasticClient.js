@@ -4,9 +4,16 @@ const dotenv = require('dotenv');
 // Load environment variables from .env file
 dotenv.config();
 
-// Create a new ElasticSearch client with the correct node URL
+// Create a new ElasticSearch client with the correct cloud URL and credentials
 const client = new Client({
-    node: process.env.ELASTICSEARCH_URL // Ensure this is correctly referencing the .env variable
+    node: process.env.ELASTICSEARCH_URL,  // Use the Elastic Cloud URL
+    auth: {
+        username: process.env.ELASTICSEARCH_USERNAME, // Use the cloud username (usually 'elastic')
+        password: process.env.ELASTICSEARCH_PASSWORD  // Use the password provided by Elastic Cloud
+    },
+    tls: {
+        rejectUnauthorized: false // Only use this if you're sure the certificate is self-signed or unverified.
+    }
 });
 
 // Function to test the connection to ElasticSearch
@@ -15,7 +22,7 @@ const testConnection = async () => {
         const health = await client.cluster.health();
         console.log('Elasticsearch Cluster Health:', health);
     } catch (error) {
-        console.error('Elasticsearch Connection Error:', error);
+        console.error('Elasticsearch Connection Error:', error.message);
     }
 };
 
@@ -23,7 +30,7 @@ const testConnection = async () => {
 const searchQuery = async (query) => {
     try {
         const result = await client.search({
-            index: 'beast-search-index', // Updated to your actual index name
+            index: 'beast-search-index', // Ensure this matches your created index in Elastic Cloud
             body: {
                 query: {
                     match: {
@@ -37,8 +44,8 @@ const searchQuery = async (query) => {
         console.log('Search results:', result.hits.hits);
         return result.hits.hits; // Return only the relevant search hits
     } catch (error) {
-        console.error('Search Query Error:', error);
-        throw error;
+        console.error('Search Query Error:', error.meta.body.error); // Log detailed Elasticsearch error
+        throw new Error('Failed to perform search query');
     }
 };
 
